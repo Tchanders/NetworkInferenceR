@@ -105,12 +105,30 @@ NumericVector bayesian_blocks_discretizer(const NumericVector &data) {
   return ret;
 }
 
+// Returns edges of discretized bins
+NumericVector uniform_width_discretizer(const NumericVector &data) {
+  // TODO: Let user choose
+  int n = 6;
+  const double * min = min_element(data.begin(), data.end());
+  const double * max = max_element(data.begin(), data.end());
+  double width = double(*max - *min) / double(n);
+  NumericVector ret(n + 1);
+  double val = *min;
+
+  for (int i = 0; i < ret.size() - 1; i++, val += width) {
+    ret[i] = val;
+  }
+
+  ret[ret.size() - 1] = *max;
+
+  return ret;
+}
+
 // Maps a value to the bin it falls into. Uses binary search.
 int value_to_bin(double val, const NumericVector &bin_edges) {
   int start = 1;
   int fin = bin_edges.size() - 1;
   int mid = (fin + start) / 2;
-
   while (start < fin) {
     mid = (start + fin) / 2;
     if (val <= bin_edges[mid]) {
@@ -134,11 +152,10 @@ void bin_data(const NumericVector &data, const NumericVector &bin_edges, arma::m
 
 // Fills out bin_ids vector and returns number of bins
 int get_bin_ids_bayesian_blocks(const NumericVector &data, arma::mat &bin_ids) {
-  NumericVector bin_edges = bayesian_blocks_discretizer(data);
+  NumericVector bin_edges = uniform_width_discretizer(data);
   bin_data(data, bin_edges, bin_ids);
   return bin_edges.size() - 1;
 }
-
 
 // Takes in a list of bin ids and returns the probability of each bin
 void get_probabilities_max_likelihood(const arma::mat &bin_ids, int num_bins, arma::mat &probabilities) {
